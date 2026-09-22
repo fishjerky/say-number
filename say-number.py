@@ -22,8 +22,12 @@ def _coeff(d: int, unit: str) -> str:
     return DIGITS[d]
 
 
-def say_section(n: int) -> str:
-    """Convert 0..9999 to Traditional Chinese. Empty string for 0."""
+def say_section(n: int, short_teens: bool = True) -> str:
+    """Convert 0..9999 to Traditional Chinese. Empty string for 0.
+
+    When short_teens is False, 10–19 always use 一十… (never bare 十),
+    e.g. after a wan→rest bridge 零 so 10010 → 一萬零一十 not 一萬零十.
+    """
     if n == 0:
         return ""
     if n < 0 or n > 9999:
@@ -55,7 +59,8 @@ def say_section(n: int) -> str:
     if shi:
         emit_ling_if_needed()
         # Teens at start of section with no 千/百: 十/十一 not 一十/一十一
-        if shi == 1 and qian == 0 and bai == 0:
+        # unless short_teens=False (e.g. after wan bridge 零 → 零一十)
+        if shi == 1 and qian == 0 and bai == 0 and short_teens:
             parts.append("十")
         else:
             parts.append(_coeff(shi, "十") + "十")
@@ -93,7 +98,9 @@ def say_number(n: int) -> str:
     if rest:
         if wan and rest < 1000:
             parts.append("零")
-        parts.append(say_section(rest))
+            parts.append(say_section(rest, short_teens=False))
+        else:
+            parts.append(say_section(rest))
 
     return "".join(parts)
 
@@ -122,8 +129,8 @@ def run_tests() -> int:
         (2001, "兩千零一"),
         (10000, "一萬"),
         (10001, "一萬零一"),
-        (10010, "一萬零十"),
-        (10011, "一萬零十一"),
+        (10010, "一萬零一十"),
+        (10011, "一萬零一十一"),
         (10100, "一萬零一百"),
         (11000, "一萬一千"),
         (11100, "一萬一千一百"),
@@ -132,7 +139,7 @@ def run_tests() -> int:
         (22000, "兩萬兩千"),
         (100000, "十萬"),
         (100001, "十萬零一"),
-        (100010, "十萬零十"),
+        (100010, "十萬零一十"),
         (101000, "十萬一千"),
         (110000, "十一萬"),
         (200000, "二十萬"),
